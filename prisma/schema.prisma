@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Extra constraints (CHECK + EXCLUDE overlap) live in the init migration SQL.
+model Booking {
+  id         String   @id @default(uuid()) @db.Uuid
+  startsAt   DateTime @map("starts_at") @db.Timestamptz(6)
+  endsAt     DateTime @map("ends_at") @db.Timestamptz(6)
+  bookerName String   @map("booker_name") @db.VarChar(100)
+  division   String   @db.VarChar(100)
+  agenda     String   @db.VarChar(1000)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([endsAt])
+  @@map("bookings")
+}
