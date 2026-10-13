@@ -27,7 +27,7 @@ p{margin:0;color:var(--muted);font-size:.9375rem}
 <p class="code">403 · Akses ditolak</p>
 <h1>Akses hanya dari jaringan kantor</h1>
 <p>Halaman Booking Rapat hanya dapat dibuka dari jaringan internal kantor.</p>
-<p class="hint">Sambungkan perangkat Anda ke WiFi kantor, lalu muat ulang halaman ini. Jika masih ditolak, hubungi tim IT.</p>
+<p class="hint">Sambungkan perangkat Anda ke WiFi kantor, lalu muat ulang halaman ini. Jika masih ditolak, hubungi tim APJAR.</p>
 </main>
 </body>
 </html>`;
