@@ -15,6 +15,7 @@ export default defineConfig({
   },
   datasource: {
     // process.env instead of env() so `prisma generate` works without a URL.
-    url: process.env.DATABASE_URL,
+    // Prefer Neon's direct (unpooled) URL: migrate needs advisory locks, which break through PgBouncer.
+    url: process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL,
   },
 });

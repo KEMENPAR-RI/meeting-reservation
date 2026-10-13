@@ -25,9 +25,9 @@ function logOnce(key: string, log: () => void): void {
 }
 
 export function isOfficeCheckBypassed(): boolean {
-  if (process.env.NODE_ENV === 'production') return false;
-  if (process.env.OFFICE_IP_CHECK?.trim().toLowerCase() !== 'off') return false;
-  logOnce('bypass', () => console.warn('[office-ip] OFFICE_IP_CHECK=off: IP check bypassed (dev only)'));
+  // Fail closed: only an explicit "false" disables the check.
+  if (process.env.OFFICE_IP_CHECK?.trim().toLowerCase() !== 'false') return false;
+  logOnce('bypass', () => console.warn('[office-ip] OFFICE_IP_CHECK=false: IP check disabled'));
   return true;
 }
 

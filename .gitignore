@@ -46,3 +46,11 @@ next-env.d.ts
 # prisma generated client
 /lib/generated/
 .env*
+!.env.example
+
+# neon agent skills
+/.agents/
+/.claude/
+/.claude/skills/
+/skills-lock.json
+.claude/settings.local.json
