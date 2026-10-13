@@ -1,6 +1,7 @@
 'use server';
 
 import { refresh } from 'next/cache';
+import { headers } from 'next/headers';
 
 import { prisma } from '@/lib/prisma';
 import { isAdmin } from '@/lib/auth/session';
@@ -11,6 +12,7 @@ import {
   type OverlappingSlot,
 } from '@/lib/booking/queries';
 import { formatTimeRange, getBookingStatus } from '@/lib/booking/time';
+import { checkOfficeAccess } from '@/lib/office-access';
 import type { BookingFormState, CancelBookingResult } from '@/lib/booking/types';
 import {
   isBookingId,
@@ -27,6 +29,10 @@ export async function createBooking(
   _prevState: BookingFormState,
   formData: FormData,
 ): Promise<BookingFormState> {
+  if (!checkOfficeAccess(await headers()).allowed) {
+    return { status: 'error', message: 'Tidak diizinkan.', values: readBookingValues(formData) };
+  }
+
   const parsed = parseBookingInput(formData);
   if (!parsed.ok) {
     return {
@@ -78,6 +84,7 @@ export async function updateBooking(
   const values = readBookingValues(formData);
   const fail = (message: string): BookingFormState => ({ status: 'error', message, values });
 
+  if (!checkOfficeAccess(await headers()).allowed) return fail('Tidak diizinkan.');
   if (!(await isAdmin())) return fail('Tidak diizinkan.');
   if (!isBookingId(id)) return fail('Booking tidak valid.');
 
@@ -134,6 +141,7 @@ export async function updateBooking(
 
 // `id` comes from the client: treat it as unknown at runtime.
 export async function cancelBooking(id: string): Promise<CancelBookingResult> {
+  if (!checkOfficeAccess(await headers()).allowed) return { ok: false, message: 'Tidak diizinkan.' };
   // Authorization is enforced here; hiding the button is UX only.
   if (!(await isAdmin())) return { ok: false, message: 'Tidak diizinkan.' };
   if (!isBookingId(id)) return { ok: false, message: 'Booking tidak valid.' };
