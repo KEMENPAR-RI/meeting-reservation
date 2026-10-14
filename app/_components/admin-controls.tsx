@@ -15,7 +15,7 @@ export async function AdminControls() {
   // Plain form: logout works without JS.
   return (
     <form action={logoutAdmin} className="flex shrink-0 items-center gap-2">
-      <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-primary">
+      <span className="hidden rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-primary sm:inline">
         Admin
       </span>
       <button type="submit" className={buttonClass}>
@@ -27,5 +27,5 @@ export async function AdminControls() {
 
 // Same height as the controls so the header does not shift.
 export function AdminControlsFallback() {
-  return <div aria-hidden="true" className="h-9 w-20 shrink-0" />;
+  return <div aria-hidden="true" className="h-9 w-16 shrink-0" />;
 }

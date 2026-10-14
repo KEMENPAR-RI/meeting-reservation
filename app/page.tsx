@@ -8,7 +8,7 @@ export default function Home() {
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 font-sans sm:px-6 lg:py-14">
       <SiteHeader />
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start">
         {/* Focal point: the form */}
         <section
           aria-labelledby="form-heading"
