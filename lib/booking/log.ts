@@ -43,6 +43,7 @@ export const LOG_YEAR_MIN = 2000;
 export const LOG_YEAR_MAX = 2100;
 // Hard cap for the log page and export; above it the user must narrow the filter.
 export const LOG_MAX_ROWS = 5000;
+export { RESET_CONFIRMATION } from './types';
 
 // Rejects C0 controls and DEL (Postgres rejects NUL).
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;

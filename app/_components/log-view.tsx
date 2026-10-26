@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { LogData } from '@/lib/booking/log';
 import { DayDetailDialog } from './day-detail-dialog';
 import { YearCalendar } from './year-calendar';
@@ -9,12 +9,27 @@ type Props = { data: LogData; filtered: boolean };
 
 export function LogView({ data, filtered }: Props) {
   const [openKey, setOpenKey] = useState<string | null>(null);
-  const openDay = openKey ? (data.days.find((d) => d.dateKey === openKey) ?? null) : null;
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  // Day emptied by a delete/edit: keep the dialog mounted so it closes itself.
+  const openDay = openKey
+    ? (data.days.find((d) => d.dateKey === openKey) ?? { dateKey: openKey, count: 0, entries: [] })
+    : null;
+
+  // Runs after the native focus restore; an emptied day's button is now a <span>, so focus a stable target.
+  const closeDay = () => {
+    if (openDay?.entries.length === 0) headingRef.current?.focus();
+    setOpenKey(null);
+  };
 
   return (
     <section aria-labelledby="calendar-heading" className="space-y-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h3 id="calendar-heading" className="text-lg font-semibold text-primary">
+        <h3
+          ref={headingRef}
+          id="calendar-heading"
+          tabIndex={-1}
+          className="text-lg font-semibold text-primary focus:outline-none"
+        >
           Kalender {data.year}
         </h3>
         {data.total > 0 && (
@@ -39,7 +54,7 @@ export function LogView({ data, filtered }: Props) {
       <YearCalendar year={data.year} days={data.days} onPickDay={setOpenKey} />
 
       {/* Mounted on demand, like EditBookingDialog. */}
-      {openDay && <DayDetailDialog day={openDay} onClose={() => setOpenKey(null)} />}
+      {openDay && <DayDetailDialog day={openDay} onClose={closeDay} />}
     </section>
   );
 }

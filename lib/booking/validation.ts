@@ -58,6 +58,19 @@ const timeField = (label: string) =>
     .min(1, `${label} wajib diisi.`)
     .refine(isTimeString, `Format ${label.toLowerCase()} tidak valid (JJ:MM).`);
 
+// Text-only fields; also used alone to edit finished bookings.
+const textSchema = z.object({
+  bookerName: requiredText('Nama pemesan', BOOKING_LIMITS.bookerName),
+  division: requiredText('Divisi', BOOKING_LIMITS.division),
+  agenda: requiredText('Agenda', BOOKING_LIMITS.agenda),
+});
+
+export type BookingTextInput = z.infer<typeof textSchema>;
+
+export type ParseBookingTextResult =
+  | { ok: true; data: BookingTextInput }
+  | { ok: false; fieldErrors: BookingFieldErrors; values: BookingValues };
+
 function buildSchema(now: Date, options: ParseBookingOptions = {}) {
   return z
     .object({
@@ -69,9 +82,7 @@ function buildSchema(now: Date, options: ParseBookingOptions = {}) {
         .refine(isValidCalendarDate, 'Tanggal tidak valid.'),
       startTime: timeField('Jam mulai'),
       endTime: timeField('Jam akhir'),
-      bookerName: requiredText('Nama pemesan', BOOKING_LIMITS.bookerName),
-      division: requiredText('Divisi', BOOKING_LIMITS.division),
-      agenda: requiredText('Agenda', BOOKING_LIMITS.agenda),
+      ...textSchema.shape,
     })
     // Zod 4 runs this even if other fields failed, so guard the inputs it needs.
     .superRefine((v, ctx) => {
@@ -150,16 +161,34 @@ export function parseBookingInput(
   if (result.success) {
     return { ok: true, data: result.data };
   }
+  return { ok: false, fieldErrors: toFieldErrors(result.error.issues), values };
+}
 
-  // First message per field.
+// Only bookerName/division/agenda are read; date/time are ignored even if sent.
+export function readBookingTextValues(formData: FormData): BookingValues {
+  const all = readBookingValues(formData);
+  return { bookerName: all.bookerName, division: all.division, agenda: all.agenda };
+}
+
+export function parseBookingText(formData: FormData): ParseBookingTextResult {
+  const values = readBookingTextValues(formData);
+  const result = textSchema.safeParse(values);
+  if (result.success) {
+    return { ok: true, data: result.data };
+  }
+  return { ok: false, fieldErrors: toFieldErrors(result.error.issues), values };
+}
+
+// First message per field.
+function toFieldErrors(issues: z.core.$ZodIssue[]): BookingFieldErrors {
   const fieldErrors: BookingFieldErrors = {};
-  for (const issue of result.error.issues) {
+  for (const issue of issues) {
     const field = issue.path[0];
     if (typeof field === 'string' && isBookingField(field) && !fieldErrors[field]) {
       fieldErrors[field] = issue.message;
     }
   }
-  return { ok: false, fieldErrors, values };
+  return fieldErrors;
 }
 
 function isBookingField(value: string): value is BookingField {

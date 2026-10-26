@@ -17,11 +17,11 @@ type Props = {
   minDate?: string;
 };
 
-// Shared booking inputs; `name` attributes stay equal to BOOKING_FIELDS.
-export function BookingFields({ idPrefix, values, errors, minDate }: Props) {
-  const fieldId = (name: BookingField) => `${idPrefix}${name}`;
+type TextFieldsProps = Omit<Props, 'minDate'>;
 
-  // Shared a11y + error wiring for each field.
+// Shared a11y + error wiring for each field.
+function fieldWiring({ idPrefix, values, errors }: TextFieldsProps) {
+  const fieldId = (name: BookingField) => `${idPrefix}${name}`;
   const fieldProps = (name: BookingField) => ({
     id: fieldId(name),
     name,
@@ -29,6 +29,13 @@ export function BookingFields({ idPrefix, values, errors, minDate }: Props) {
     'aria-invalid': errors[name] ? true : undefined,
     'aria-describedby': errors[name] ? `${fieldId(name)}-error` : undefined,
   });
+  return { fieldId, fieldProps };
+}
+
+// Shared booking inputs; `name` attributes stay equal to BOOKING_FIELDS.
+export function BookingFields({ minDate, ...props }: Props) {
+  const { errors } = props;
+  const { fieldId, fieldProps } = fieldWiring(props);
 
   return (
     <>
@@ -45,6 +52,18 @@ export function BookingFields({ idPrefix, values, errors, minDate }: Props) {
         </Field>
       </div>
 
+      <BookingTextFields {...props} />
+    </>
+  );
+}
+
+// Name, division and agenda only (text-only edit of finished bookings).
+export function BookingTextFields(props: TextFieldsProps) {
+  const { errors } = props;
+  const { fieldId, fieldProps } = fieldWiring(props);
+
+  return (
+    <>
       <Field label="Nama Pemesan" id={fieldId('bookerName')} error={errors.bookerName}>
         <input
           type="text"

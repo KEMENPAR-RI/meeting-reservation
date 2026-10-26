@@ -12,6 +12,9 @@ export const BOOKING_FIELDS = [
 
 export type BookingField = (typeof BOOKING_FIELDS)[number];
 
+// Exact, case-sensitive phrase required by resetAllBookings; here so the client can import it (no zod).
+export const RESET_CONFIRMATION = 'RESET';
+
 // Shared by server validation and input `maxLength`.
 export const BOOKING_LIMITS = {
   bookerName: 100,

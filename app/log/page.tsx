@@ -14,6 +14,7 @@ import { getDistinctDivisions, getLogBookings } from '@/lib/booking/queries';
 import { ExportButtons } from '../_components/export-buttons';
 import { LogFilterBar } from '../_components/log-filter-bar';
 import { LogView } from '../_components/log-view';
+import { ResetLogButton } from '../_components/reset-log-button';
 import { SiteHeader } from '../_components/site-header';
 
 export const metadata: Metadata = { title: 'Log Reservasi - Booking Ruang Rapat' };
@@ -57,7 +58,11 @@ async function LogContent({ searchParams }: { searchParams: SearchParams }) {
           <BackLink />
           <h2 className="mt-1 text-2xl font-semibold tracking-tight text-primary">Log Reservasi</h2>
         </div>
-        <ExportButtons searchParams={query} disabled={truncated} />
+        {/* Reset stays available even when truncated (export is not). */}
+        <div className="flex flex-wrap items-start gap-2">
+          <ExportButtons searchParams={query} disabled={truncated} />
+          <ResetLogButton />
+        </div>
       </div>
 
       <LogFilterBar value={filters} divisions={data.divisions} />
