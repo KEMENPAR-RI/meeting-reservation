@@ -5,7 +5,6 @@ import { headers } from 'next/headers';
 import { clearSession, createSession, getAuthConfig } from '@/lib/auth/session';
 import { passwordMatches } from '@/lib/auth/token';
 import type { LoginState } from '@/lib/auth/types';
-import { deleteOldBookings } from '@/lib/booking/queries';
 import { checkOfficeAccess } from '@/lib/office-access';
 
 const FAILED_LOGIN_DELAY_MS = 500;
@@ -26,7 +25,6 @@ export async function loginAdmin(_prevState: LoginState, formData: FormData): Pr
   }
 
   await createSession();
-  await deleteOldBookings(new Date()).catch((error) => console.error('[cleanup]', error));
 
   // Setting the cookie already re-renders; no refresh() needed.
   return { status: 'success' };

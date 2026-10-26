@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Booking Rapat",
+  title: "Booking Ruang Rapat - Kemenpar BIRODATIN",
   description: "Pemesanan ruang rapat",
   icons: "/images/logo.webp",
 };

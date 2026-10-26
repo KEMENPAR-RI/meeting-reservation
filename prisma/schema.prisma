@@ -17,6 +17,7 @@ model Booking {
   agenda     String   @db.VarChar(1000)
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  @@index([startsAt])
   @@index([endsAt])
   @@map("bookings")
 }

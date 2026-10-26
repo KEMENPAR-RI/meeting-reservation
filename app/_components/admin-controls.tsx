@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { logoutAdmin } from '@/app/actions/auth';
 import { isAdmin } from '@/lib/auth/session';
 import { LoginDialog } from './login-dialog';
@@ -18,6 +19,11 @@ export async function AdminControls() {
       <span className="hidden rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-primary sm:inline">
         Admin
       </span>
+      {/* Admin-only entry; /log re-checks the session. */}
+      <Link href="/log" className={buttonClass}>
+        <span className="sm:hidden">Log</span>
+        <span className="hidden sm:inline">Log Reservasi</span>
+      </Link>
       <button type="submit" className={buttonClass}>
         Logout
       </button>

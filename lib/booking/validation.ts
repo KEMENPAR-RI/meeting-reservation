@@ -12,6 +12,7 @@ import { BOOKING_FIELDS, BOOKING_LIMITS, type BookingField } from './types';
 
 // Upper bound against junk years.
 export const MAX_DAYS_AHEAD = 365;
+export const MIN_DURATION_MINUTES = 15;
 
 export type BookingInput = {
   startsAt: Date;
@@ -100,6 +101,12 @@ function buildSchema(now: Date, options: ParseBookingOptions = {}) {
           code: 'custom',
           path: ['endTime'],
           message: 'Jam akhir harus setelah jam mulai.',
+        });
+      } else if (endsAt.getTime() - startsAt.getTime() < MIN_DURATION_MINUTES * 60_000) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['endTime'],
+          message: `Durasi minimal ${MIN_DURATION_MINUTES} menit.`,
         });
       }
       if (startUnchanged) {

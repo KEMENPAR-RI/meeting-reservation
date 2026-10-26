@@ -66,7 +66,7 @@ export async function BookingList() {
                     }}
                   />
                 )}
-                <CancelButton id={b.id} />
+                {status !== 'done' && <CancelButton id={b.id} />}
               </div>
             )}
           </li>

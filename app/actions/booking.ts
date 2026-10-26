@@ -5,12 +5,7 @@ import { headers } from 'next/headers';
 
 import { prisma } from '@/lib/prisma';
 import { isAdmin } from '@/lib/auth/session';
-import {
-  deleteOldBookings,
-  findBookingById,
-  findOverlap,
-  type OverlappingSlot,
-} from '@/lib/booking/queries';
+import { findBookingById, findOverlap, type OverlappingSlot } from '@/lib/booking/queries';
 import { formatTimeRange, getBookingStatus } from '@/lib/booking/time';
 import { checkOfficeAccess } from '@/lib/office-access';
 import type { BookingFormState, CancelBookingResult } from '@/lib/booking/types';
@@ -44,9 +39,6 @@ export async function createBooking(
   }
 
   const { startsAt, endsAt, bookerName, division, agenda } = parsed.data;
-
-  // Best-effort; must never block or fail a booking.
-  await deleteOldBookings(new Date()).catch((error) => console.error('[cleanup]', error));
 
   try {
     const clash = await findOverlap(startsAt, endsAt);
@@ -147,14 +139,17 @@ export async function cancelBooking(id: string): Promise<CancelBookingResult> {
   if (!isBookingId(id)) return { ok: false, message: 'Booking tidak valid.' };
 
   try {
+    // Finished bookings are kept for the reservation log; same rule as updateBooking.
+    const existing = await findBookingById(id);
+    if (existing && getBookingStatus(existing.startsAt, existing.endsAt, new Date()) === 'done') {
+      return { ok: false, message: 'Booking yang sudah selesai tidak bisa dibatalkan.' };
+    }
     // Idempotent: deleting an already-removed booking still succeeds.
     await prisma.booking.deleteMany({ where: { id } });
   } catch (error) {
     console.error('[cancelBooking] failed to delete booking', error);
     return { ok: false, message: 'Gagal membatalkan booking.' };
   }
-
-  await deleteOldBookings(new Date()).catch((error) => console.error('[cleanup]', error));
 
   refresh();
   return { ok: true };

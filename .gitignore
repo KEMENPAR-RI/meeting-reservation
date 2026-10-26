@@ -54,3 +54,6 @@ next-env.d.ts
 /.claude/skills/
 /skills-lock.json
 .claude/settings.local.json
+
+# tenfold
+/.tenfold/
