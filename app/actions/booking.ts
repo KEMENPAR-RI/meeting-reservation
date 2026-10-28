@@ -3,11 +3,18 @@
 import { refresh } from 'next/cache';
 import { headers } from 'next/headers';
 
+import { Prisma } from '@/lib/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import { isAdmin } from '@/lib/auth/session';
-import { findBookingById, findOverlap, type OverlappingSlot } from '@/lib/booking/queries';
+import {
+  findBookingById,
+  findOverlap,
+  lockBookingWrites,
+  type OverlappingSlot,
+} from '@/lib/booking/queries';
 import { formatTimeRange, getBookingStatus } from '@/lib/booking/time';
 import { checkOfficeAccess } from '@/lib/office-access';
+import { generateAttendanceToken } from '@/lib/booking/attendance-token';
 import type { BookingFormState, CancelBookingResult } from '@/lib/booking/types';
 import {
   isBookingId,
@@ -16,9 +23,14 @@ import {
   type BookingValues,
 } from '@/lib/booking/validation';
 
-const OVERLAP_CONSTRAINT = 'bookings_no_overlap';
-const PG_EXCLUSION_VIOLATION = '23P01';
 const PRISMA_RECORD_NOT_FOUND = 'P2025';
+
+// Lock-first write tx (ADR 0001); RC so the overlap check sees the previous holder's commit.
+const BOOKING_TX_OPTIONS = {
+  isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  maxWait: 5000,
+  timeout: 10000,
+};
 
 export async function createBooking(
   _prevState: BookingFormState,
@@ -41,20 +53,20 @@ export async function createBooking(
   const { startsAt, endsAt, bookerName, division, agenda } = parsed.data;
 
   try {
-    const clash = await findOverlap(startsAt, endsAt);
-    if (clash) return overlapError(clash, readBookingValues(formData));
+    const clash = await prisma.$transaction(async (tx) => {
+      await lockBookingWrites(tx);
+      const found = await findOverlap(startsAt, endsAt, undefined, tx);
+      if (found) return found;
 
-    // Explicit allowlist; never spread form data.
-    await prisma.booking.create({
-      data: { startsAt, endsAt, bookerName, division, agenda },
-      select: { id: true },
-    });
+      // Explicit allowlist; never spread form data.
+      await tx.booking.create({
+        data: { startsAt, endsAt, bookerName, division, agenda, attendanceToken: generateAttendanceToken() },
+        select: { id: true },
+      });
+      return null;
+    }, BOOKING_TX_OPTIONS);
+    if (clash) return overlapError(clash, readBookingValues(formData));
   } catch (error) {
-    // Race guard: a concurrent insert hit the exclusion constraint.
-    if (isOverlapViolation(error)) {
-      const clash = await findOverlap(startsAt, endsAt).catch(() => null);
-      return overlapError(clash, readBookingValues(formData));
-    }
     console.error('[createBooking] failed to save booking', error);
     return {
       status: 'error',
@@ -107,20 +119,21 @@ export async function updateBooking(
   const { startsAt, endsAt, bookerName, division, agenda } = parsed.data;
 
   try {
-    const clash = await findOverlap(startsAt, endsAt, id);
-    if (clash) return overlapError(clash, values);
+    const clash = await prisma.$transaction(async (tx) => {
+      await lockBookingWrites(tx);
+      const found = await findOverlap(startsAt, endsAt, id, tx);
+      if (found) return found;
 
-    // Explicit allowlist; never spread form data.
-    await prisma.booking.update({
-      where: { id },
-      data: { startsAt, endsAt, bookerName, division, agenda },
-      select: { id: true },
-    });
+      // Explicit allowlist; never spread form data.
+      await tx.booking.update({
+        where: { id },
+        data: { startsAt, endsAt, bookerName, division, agenda },
+        select: { id: true },
+      });
+      return null;
+    }, BOOKING_TX_OPTIONS);
+    if (clash) return overlapError(clash, values);
   } catch (error) {
-    if (isOverlapViolation(error)) {
-      const clash = await findOverlap(startsAt, endsAt, id).catch(() => null);
-      return overlapError(clash, values);
-    }
     // Deleted between the lookup and the update.
     if (isRecordNotFound(error)) return fail('Booking tidak ditemukan.');
     console.error('[updateBooking] failed to update booking', error);
@@ -163,22 +176,6 @@ function overlapError(clash: OverlappingSlot | null, values: BookingValues): Boo
     fieldErrors: { startTime: `Ruangan sudah dibooking pada jam tersebut${slot}.` },
     values,
   };
-}
-
-// Prisma 7 + driver adapter surfaces unmapped PG errors as P2039 with
-// meta.driverAdapterError.cause = { kind: 'postgres', code, message, ... }.
-function isOverlapViolation(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const cause = (error as { meta?: { driverAdapterError?: { cause?: Record<string, unknown> } } })
-    .meta?.driverAdapterError?.cause;
-
-  const codes = [cause?.code, cause?.originalCode];
-  if (codes.includes(PG_EXCLUSION_VIOLATION)) return true;
-
-  const text = [error.message, cause?.message, cause?.originalMessage]
-    .filter((s): s is string => typeof s === 'string')
-    .join(' ');
-  return text.includes(OVERLAP_CONSTRAINT);
 }
 
 // Prisma 7 surfaces a missing update target as PrismaClientKnownRequestError code P2025.

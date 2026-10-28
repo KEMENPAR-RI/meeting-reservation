@@ -1,13 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import Link from 'next/link';
 import { cancelBooking } from '@/app/actions/booking';
 import { deletePastBooking } from '@/app/actions/log';
 import type { LogDay, LogEntry } from '@/lib/booking/log';
-import { APP_TZ_LABEL, formatDateLabel, toInstant } from '@/lib/booking/time';
+import { APP_TZ_LABEL, formatDateLabel, getBookingStatus, toInstant } from '@/lib/booking/time';
 import { useConfirm } from './confirm-dialog';
 import { EditBookingDialog } from './edit-booking-dialog';
 import { EditPastBookingDialog } from './edit-past-booking-dialog';
+import { StatusBadge } from './status-badge';
 
 type Props = { day: LogDay | null; onClose: () => void };
 
@@ -82,10 +84,18 @@ export function DayDetailDialog({ day, onClose }: Props) {
         <ol className="space-y-3">
           {entries.map((e) => (
             <li key={e.id} className="rounded-xl border border-zinc-200 border-l-4 border-l-secondary p-4">
-              <p className="text-sm font-semibold text-primary tabular-nums">
-                <time dateTime={e.startISO}>{e.startLabel}</time>–
-                <time dateTime={e.endISO}>{e.endLabel}</time> {APP_TZ_LABEL}
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+                <p className="text-sm font-semibold text-primary tabular-nums">
+                  <time dateTime={e.startISO}>{e.startLabel}</time>–
+                  <time dateTime={e.endISO}>{e.endLabel}</time> {APP_TZ_LABEL}
+                </p>
+                {/* Client-only dialog (opened by click), so reading the clock here can't mismatch SSR */}
+                <StatusBadge
+                  startsAt={e.startISO}
+                  endsAt={e.endISO}
+                  initialStatus={getBookingStatus(new Date(e.startISO), new Date(e.endISO), new Date())}
+                />
+              </div>
               <p className="mt-1.5 text-sm text-zinc-600">
                 <span className="font-medium text-zinc-800">{e.bookerName}</span>
                 <span aria-hidden="true"> · </span>
@@ -93,7 +103,17 @@ export function DayDetailDialog({ day, onClose }: Props) {
               </p>
               {/* Plain text only; line breaks kept via CSS */}
               <p className="mt-2 whitespace-pre-line break-words text-sm text-zinc-700">{e.agenda}</p>
-              <div className="mt-3 flex items-start justify-end gap-2">
+              <div className="mt-3 flex flex-wrap items-start justify-end gap-2">
+                <span className="mr-auto self-center rounded-full bg-secondary/40 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
+                  {e.attendeeCount} hadir
+                </span>
+                <Link
+                  href={`/rapat/${e.id}`}
+                  aria-label={`Daftar hadir reservasi ${e.bookerName} ${e.startLabel}–${e.endLabel}`}
+                  className="rounded-md border border-primary/30 bg-white px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-safe:transition-colors"
+                >
+                  Daftar hadir
+                </Link>
                 <button
                   type="button"
                   onClick={() => setEditing({ entry: e, past: Date.parse(e.endISO) <= Date.now() })}

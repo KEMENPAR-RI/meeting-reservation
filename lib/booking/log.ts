@@ -8,7 +8,7 @@ import {
   toJakartaDateString,
   todayInJakarta,
 } from './time';
-import { BOOKING_LIMITS, type UpcomingBooking } from './types';
+import { BOOKING_LIMITS, attendeeRoleLabel, type LogBooking } from './types';
 
 // Shared contract for the reservation log page, its client components, and the export route.
 
@@ -31,6 +31,7 @@ export type LogEntry = {
   bookerName: string;
   division: string;
   agenda: string;
+  attendeeCount: number;
 };
 
 export type LogDay = { dateKey: string; count: number; entries: LogEntry[] };
@@ -43,6 +44,8 @@ export const LOG_YEAR_MIN = 2000;
 export const LOG_YEAR_MAX = 2100;
 // Hard cap for the log page and export; above it the user must narrow the filter.
 export const LOG_MAX_ROWS = 5000;
+// Attendee rows cap for the export.
+export const LOG_MAX_ATTENDEES = 20000;
 export { RESET_CONFIRMATION } from './types';
 
 // Rejects C0 controls and DEL (Postgres rejects NUL).
@@ -104,7 +107,7 @@ function minDate(a: Date, b: Date): Date {
   return a < b ? a : b;
 }
 
-function toLogEntry(row: UpcomingBooking): LogEntry {
+function toLogEntry(row: LogBooking): LogEntry {
   return {
     id: row.id,
     dateKey: toJakartaDateString(row.startsAt),
@@ -115,11 +118,12 @@ function toLogEntry(row: UpcomingBooking): LogEntry {
     bookerName: row.bookerName,
     division: row.division,
     agenda: row.agenda,
+    attendeeCount: row.attendeeCount,
   };
 }
 
 // Groups by WIB day of startsAt; days and entries ordered by start.
-export function buildLogData(rows: UpcomingBooking[], f: LogFilters, divisions: string[]): LogData {
+export function buildLogData(rows: LogBooking[], f: LogFilters, divisions: string[]): LogData {
   const sorted = [...rows].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
   const byDay = new Map<string, LogEntry[]>();
   for (const row of sorted) {
@@ -142,12 +146,13 @@ export const EXPORT_COLUMNS = [
   'Jam Selesai',
   'Pemesan',
   'Divisi',
+  'Jumlah Hadir',
   'Agenda',
 ] as const;
 
 // Header row plus one row per booking; empty input yields the header only.
-export function toExportRows(rows: UpcomingBooking[]): string[][] {
-  const sorted = [...rows].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+export function toExportRows(rows: LogBooking[]): string[][] {
+  const sorted = sortByStart(rows);
   return [
     [...EXPORT_COLUMNS],
     ...sorted.map((row) => [
@@ -156,7 +161,76 @@ export function toExportRows(rows: UpcomingBooking[]): string[][] {
       formatTime(row.endsAt),
       row.bookerName,
       row.division,
+      String(row.attendeeCount),
       row.agenda,
     ]),
   ];
+}
+
+function sortByStart(rows: LogBooking[]): LogBooking[] {
+  return [...rows].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+}
+
+export const ATTENDEE_EXPORT_COLUMNS = [
+  'Tanggal',
+  'Jam Mulai',
+  'Jam Selesai',
+  'Agenda',
+  'Pemesan',
+  'Nama Peserta',
+  'Biro/Divisi/Instansi',
+  'Sebagai',
+  'Waktu Hadir',
+] as const;
+
+export type ExportAttendee = {
+  bookingId: string;
+  name: string;
+  division: string;
+  role: string | null;
+  signedAt: Date;
+};
+
+// sheetRows: header + one row per attendee. linesByRow: PDF sub-rows aligned with toExportRows' body.
+// `attendees` must be in signing order (getLogAttendees). Attendees of bookings outside the set
+// (race between the two reads) are skipped.
+export function toAttendeeExport(
+  bookings: LogBooking[],
+  attendees: ExportAttendee[],
+): { sheetRows: string[][]; linesByRow: string[][] } {
+  const byBooking = new Map<string, ExportAttendee[]>();
+  for (const a of attendees) {
+    const list = byBooking.get(a.bookingId);
+    if (list) list.push(a);
+    else byBooking.set(a.bookingId, [a]);
+  }
+
+  const sheetRows: string[][] = [[...ATTENDEE_EXPORT_COLUMNS]];
+  const linesByRow: string[][] = [];
+  for (const b of sortByStart(bookings)) {
+    const list = byBooking.get(b.id) ?? [];
+    const date = toJakartaDateString(b.startsAt);
+    const start = formatTime(b.startsAt);
+    const end = formatTime(b.endsAt);
+    const lines: string[] = [];
+    list.forEach((a, i) => {
+      const signedDate = toJakartaDateString(a.signedAt);
+      const signedTime = formatTime(a.signedAt);
+      const role = attendeeRoleLabel(a.role);
+      sheetRows.push([
+        date,
+        start,
+        end,
+        b.agenda,
+        b.bookerName,
+        a.name,
+        a.division,
+        role,
+        `${signedDate} ${signedTime}`,
+      ]);
+      lines.push(`${i + 1}. ${a.name} · ${a.division} · ${role} · ${signedTime}, ${signedDate}`);
+    });
+    linesByRow.push(lines);
+  }
+  return { sheetRows, linesByRow };
 }

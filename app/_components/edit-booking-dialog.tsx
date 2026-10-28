@@ -93,11 +93,11 @@ export function EditBookingDialog({ booking, onClose }: Props) {
             </p>
           )}
 
-          {/* No date `min`: an unchanged past start is valid. */}
           <BookingFields
             idPrefix="edit-"
             values={{ ...initial, ...state.values }}
             errors={state.fieldErrors ?? {}}
+            original={{ date: initial.date, startTime: initial.startTime }}
           />
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

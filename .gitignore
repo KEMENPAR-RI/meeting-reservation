@@ -57,3 +57,8 @@ next-env.d.ts
 
 # tenfold
 /.tenfold/
+
+/.claude/tenfold.json
+
+.flyenv
+/app/fonts/priestacy/*.pdf

@@ -1,17 +1,12 @@
 'use client';
 
-import { useActionState, useSyncExternalStore } from 'react';
+import { useActionState } from 'react';
 import { createBooking } from '@/app/actions/booking';
 import { initialBookingFormState } from '@/lib/booking/types';
-import { todayInJakarta } from '@/lib/booking/time';
 import { BookingFields } from './booking-fields';
-
-const noopSubscribe = () => () => {};
 
 export function BookingForm() {
   const [state, formAction, pending] = useActionState(createBooking, initialBookingFormState);
-  // Date `min` is a UX hint; read client-only so `new Date()` stays out of the prerendered shell.
-  const minDate = useSyncExternalStore(noopSubscribe, () => todayInJakarta(), () => undefined);
 
   const errors = state.fieldErrors ?? {};
   const values = state.values ?? {};
@@ -31,7 +26,7 @@ export function BookingForm() {
         </p>
       )}
 
-      <BookingFields idPrefix="" values={values} errors={errors} minDate={minDate} />
+      <BookingFields idPrefix="" values={values} errors={errors} />
 
       <button
         type="submit"

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { io } from 'next/cache';
 import { isAdmin } from '@/lib/auth/session';
 import { getUpcomingBookings } from '@/lib/booking/queries';
@@ -51,24 +52,33 @@ export async function BookingList() {
             <p className="mt-2 whitespace-pre-line break-words text-sm text-zinc-700">
               {b.agenda}
             </p>
-            {/* UX only; the action re-checks admin */}
-            {admin && (
-              <div className="mt-3 flex items-start justify-end gap-2">
-                {status !== 'done' && (
-                  <EditBookingButton
-                    booking={{
-                      id: b.id,
-                      startsAt: b.startsAt.toISOString(),
-                      endsAt: b.endsAt.toISOString(),
-                      bookerName: b.bookerName,
-                      division: b.division,
-                      agenda: b.agenda,
-                    }}
-                  />
-                )}
-                {status !== 'done' && <CancelButton id={b.id} />}
-              </div>
-            )}
+            <div className="mt-3 flex items-start justify-between gap-2">
+              <Link
+                href={`/rapat/${b.id}`}
+                aria-label={`Daftar hadir rapat ${b.bookerName} ${formatTimeRange(b.startsAt, b.endsAt)}`}
+                className="inline-flex items-center rounded-md border border-primary/30 bg-white px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-safe:transition-colors"
+              >
+                Daftar hadir
+              </Link>
+              {/* UX only; the action re-checks admin */}
+              {admin && (
+                <div className="flex items-start justify-end gap-2">
+                  {status !== 'done' && (
+                    <EditBookingButton
+                      booking={{
+                        id: b.id,
+                        startsAt: b.startsAt.toISOString(),
+                        endsAt: b.endsAt.toISOString(),
+                        bookerName: b.bookerName,
+                        division: b.division,
+                        agenda: b.agenda,
+                      }}
+                    />
+                  )}
+                  {status !== 'done' && <CancelButton id={b.id} />}
+                </div>
+              )}
+            </div>
           </li>
         );
       })}

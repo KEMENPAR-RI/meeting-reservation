@@ -7,13 +7,13 @@ const TICK_MS = 30_000;
 
 const LABELS: Record<BookingStatus, string> = {
   upcoming: 'Akan datang',
-  ongoing: 'Berlangsung',
+  ongoing: 'Sedang berlangsung',
   done: 'Selesai',
 };
 
 const STYLES: Record<BookingStatus, string> = {
   upcoming: 'border-primary text-primary',
-  ongoing: 'border-transparent bg-secondary text-primary',
+  ongoing: 'border-emerald-200 bg-emerald-50 text-emerald-800',
   done: 'border-transparent bg-slate-100 text-slate-500',
 };
 
@@ -40,8 +40,14 @@ export function StatusBadge({ startsAt, endsAt, initialStatus }: Props) {
   return (
     <span
       data-status={status}
-      className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STYLES[status]}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${STYLES[status]}`}
     >
+      {status === 'ongoing' && (
+        <span aria-hidden="true" className="relative flex size-1.5">
+          <span className="absolute inline-flex size-full rounded-full bg-emerald-500 opacity-75 motion-safe:animate-ping" />
+          <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
+        </span>
+      )}
       {LABELS[status]}
     </span>
   );

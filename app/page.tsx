@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { BookingForm } from './_components/booking-form';
 import { BookingList } from './_components/booking-list';
 import { SiteHeader } from './_components/site-header';
@@ -27,6 +28,19 @@ export default function Home() {
           <Suspense fallback={<BookingListSkeleton />}>
             <BookingList />
           </Suspense>
+          <Link
+            href="/rapat"
+            className="mt-4 inline-flex items-center gap-1 rounded text-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Lihat rapat sebelumnya
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="size-4">
+              <path
+                fillRule="evenodd"
+                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </Link>
         </section>
       </div>
     </main>

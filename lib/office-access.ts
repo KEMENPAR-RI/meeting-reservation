@@ -66,3 +66,13 @@ export function checkOfficeAccess(headers: Headers): OfficeAccessResult {
 
   return isIpAllowed(ip, rules) ? { allowed: true } : { allowed: false, reason: 'not-allowed' };
 }
+
+// Rate-limit key from the same trusted header: IPv4 per address, IPv6 per /64; null = deny.
+export function getClientIpKey(headers: Headers): string | null {
+  const headerName = getTrustedIpHeader();
+  if (!headerName) return null;
+  const ip = extractClientIp(headers.get(headerName));
+  if (!ip) return null;
+  const value = ip.version === 6 ? ip.value >> BigInt(64) : ip.value;
+  return `${ip.version}:${value.toString(16)}`;
+}
