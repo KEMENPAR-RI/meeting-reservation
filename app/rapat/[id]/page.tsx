@@ -20,7 +20,7 @@ import { CopyAttendanceLink } from '../../_components/copy-attendance-link';
 import { SiteHeader } from '../../_components/site-header';
 import { StatusBadge } from '../../_components/status-badge';
 
-export const metadata: Metadata = { title: 'Daftar Hadir - Booking Ruang Rapat' };
+export const metadata: Metadata = { title: 'Daftar Hadir - MeetSpace' };
 
 type Params = Promise<{ id: string }>;
 

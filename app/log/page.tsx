@@ -17,7 +17,7 @@ import { LogView } from '../_components/log-view';
 import { ResetLogButton } from '../_components/reset-log-button';
 import { SiteHeader } from '../_components/site-header';
 
-export const metadata: Metadata = { title: 'Log Reservasi - Booking Ruang Rapat' };
+export const metadata: Metadata = { title: 'Log Reservasi - MeetSpace' };
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 

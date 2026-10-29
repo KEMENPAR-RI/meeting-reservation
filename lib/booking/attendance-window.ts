@@ -1,6 +1,6 @@
 // Pure attendance window rules; pass `now` explicitly.
 
-export const ATTENDANCE_OPEN_BEFORE_MS = 30 * 60_000;
+export const ATTENDANCE_OPEN_BEFORE_MS = 0;
 export const ATTENDANCE_CLOSE_AFTER_MS = 30 * 60_000;
 
 // Inclusive on both ends (ms precision).

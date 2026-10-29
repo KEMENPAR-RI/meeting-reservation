@@ -65,11 +65,11 @@ const NOTICES = {
   },
   closed: {
     title: 'Daftar hadir sudah ditutup',
-    body: `Daftar hadir hanya dapat diisi mulai ${ATTENDANCE_OPEN_BEFORE_MS / 60_000} menit sebelum rapat dimulai hingga ${ATTENDANCE_CLOSE_AFTER_MS / 60_000} menit setelah rapat selesai.`,
+    body: `Daftar hadir hanya dapat diisi mulai ${ATTENDANCE_OPEN_BEFORE_MS > 0 ? `${ATTENDANCE_OPEN_BEFORE_MS / 60_000} menit sebelum rapat dimulai` : 'saat rapat dimulai'} hingga ${ATTENDANCE_CLOSE_AFTER_MS / 60_000} menit setelah rapat selesai.`,
   },
   none: {
     title: 'Tidak ada rapat yang sedang berlangsung',
-    body: 'Silakan pindai kembali kode QR saat rapat akan dimulai.',
+    body: 'Silakan pindai kembali kode QR saat rapat dimulai.',
   },
 } as const;
 

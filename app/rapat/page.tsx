@@ -8,7 +8,7 @@ import { BackLink } from '../_components/back-link';
 import { SiteHeader } from '../_components/site-header';
 import { StatusBadge } from '../_components/status-badge';
 
-export const metadata: Metadata = { title: 'Rapat Sebelumnya - Booking Ruang Rapat' };
+export const metadata: Metadata = { title: 'Rapat Sebelumnya - MeetSpace' };
 
 export default function PastMeetingsPage() {
   return (
